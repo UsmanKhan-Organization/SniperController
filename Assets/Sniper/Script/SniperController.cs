@@ -6,9 +6,15 @@ using UnityEngine;
 
 public class SniperController : MonoBehaviour
 {
+    [Header("Controllers")]
+
     [SerializeField] private CinemachineBrain brain;
     [SerializeField] private Animator animator;
-    [SerializeField] private GameObject idleCam,scopeCam, killCam;
+    [Header("Camera"), Space(5)]
+    [SerializeField] private GameObject idleCam;
+    [SerializeField] private GameObject scopeCam;
+    [SerializeField] private GameObject killCam;
+    [Header("GameObjects"), Space(5)]
     [SerializeField] private RectTransform scopeRectPivot;
     [SerializeField] private RectTransform scopeRect;
     [SerializeField] private RectTransform shootCircle;
@@ -22,7 +28,7 @@ public class SniperController : MonoBehaviour
     private bool isDragging;
     private Vector2 dragPointerOffset;
 
-    [Header("AnimationsProperties")]
+    [Header("Animations Properties")]
     [SerializeField] private float shootCircleDuration = 0.5f;
     [SerializeField] private float scopeRectDuration = 0.8f;
     [SerializeField] private float scopeRectDurationReturn = 0.4f;
@@ -33,6 +39,15 @@ public class SniperController : MonoBehaviour
     [SerializeField] private Ease scopeRectReturnEase = Ease.OutCubic;
 
     private Tweener timeScaleTweener;
+
+    #region Unity Cycle
+    private void Start()
+    {
+        shootCircle.gameObject.SetActive(false);
+    }
+
+    #endregion
+
 
     #region Controller
 
@@ -127,7 +142,10 @@ public class SniperController : MonoBehaviour
 
         scopeRect.localScale = Vector3.one;
         if (shootCircle != null)
+        {
+            shootCircle.gameObject.SetActive(true);
             shootCircle.localScale = Vector3.one;
+        }
 
         Sequence shotSequence = DOTween.Sequence();
 
@@ -139,7 +157,7 @@ public class SniperController : MonoBehaviour
         {
             ControlGameTimeScale(0.2f);
             shootCircle.DOScale(Vector3.zero, shootCircleDuration).SetEase(shootCircleEase);
-        }   
+        }
 
         // Return the scope rect to normal immediately after its own grow animation finishes
         shotSequence.Append(scopeRect.DOScale(Vector3.one, scopeRectDurationReturn).SetEase(scopeRectReturnEase));
@@ -147,14 +165,21 @@ public class SniperController : MonoBehaviour
         // Always run completion actions when the sequence finishes
         shotSequence.OnComplete(() =>
         {
-            if (shootCircle != null)
-                shootCircle.localScale = Vector3.one;
-            scopeRectPivot.gameObject.SetActive(false);
-            ControlGameTimeScale(1f);
-            SetCameraActive(killCam, 0f);
-            
-            StartCoroutine(ResetCameraAfterDelay(1.5f));
+            ShootCompleted();
         });
+    }
+    void ShootCompleted()
+    {
+        if (shootCircle != null)
+        {
+            shootCircle.gameObject.SetActive(false);
+            shootCircle.localScale = Vector3.one;
+        }
+        scopeRectPivot.gameObject.SetActive(false);
+        ControlGameTimeScale(1f);
+        SetCameraActive(killCam, 0f);
+
+        StartCoroutine(ResetCameraAfterDelay(1.5f));
     }
     #endregion
     #region TimeScale
@@ -200,7 +225,7 @@ public class SniperController : MonoBehaviour
         ReloadAnim(true);
         yield return new WaitForSeconds(1.5f);
         ReloadAnim(false);
-            ScopeAnim(false);
+        ScopeAnim(false);
 
     }
 

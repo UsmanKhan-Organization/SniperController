@@ -16998,6 +16998,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12c91fa0e6cc24ecd924792df1c253ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  brain: {fileID: 8156954733447731265}
   animator: {fileID: 1683074056}
   idleCam: {fileID: 1536426420}
   scopeCam: {fileID: 2044620866}

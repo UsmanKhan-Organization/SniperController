@@ -10,6 +10,7 @@ public class SniperController : MonoBehaviour
 
     [SerializeField] private CinemachineBrain brain;
     [SerializeField] private Animator animator;
+    [SerializeField] private RayCastHanlder rayCastHandler;
     [Header("Camera"), Space(5)]
     [SerializeField] private GameObject idleCam;
     [SerializeField] private GameObject scopeCam;
@@ -174,6 +175,11 @@ public class SniperController : MonoBehaviour
         // Always run completion actions when the sequence finishes
         shotSequence.OnComplete(() =>
         {
+            rayCastHandler.CheckHit();
+            if (rayCastHandler.HasHit)
+            {
+                Debug.Log($"Hit: {rayCastHandler.Hit.collider.name}");
+            }
             ShootCompleted();
         });
     }

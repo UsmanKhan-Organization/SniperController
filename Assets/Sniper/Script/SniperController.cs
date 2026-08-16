@@ -1,8 +1,8 @@
 using System.Collections;
-using System.Collections.Generic;
 using Cinemachine;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SniperController : MonoBehaviour
 {
@@ -14,10 +14,16 @@ public class SniperController : MonoBehaviour
     [SerializeField] private GameObject idleCam;
     [SerializeField] private GameObject scopeCam;
     [SerializeField] private GameObject killCam;
-    [Header("GameObjects"), Space(5)]
+    [Header("________________________GameObjects________________________"), Space(1)]
+    [Header("OuterAnimationProperties")]
     [SerializeField] private RectTransform scopeRectPivot;
     [SerializeField] private RectTransform scopeRect;
     [SerializeField] private RectTransform shootCircle;
+    [Header("InnerAnimationProperties"), Space(5)]
+    [SerializeField] private GameObject shootPanel;
+    [SerializeField] private RectTransform innerCircleRect;
+    [SerializeField] private RectTransform outerCircleRect;
+    [SerializeField] private Image dotRect;
 
     [Header("Scope Move Limits")]
     [SerializeField] private float topMargin = 40f;
@@ -33,6 +39,7 @@ public class SniperController : MonoBehaviour
     [SerializeField] private float scopeRectDuration = 0.8f;
     [SerializeField] private float scopeRectDurationReturn = 0.4f;
     [SerializeField] private float timeScaleTransitionDuration = 0.25f;
+    [SerializeField] private Color hitColor = new Color(1f, 0.2f, 0.2f, 1f);
     [Space(10)]
     [SerializeField] private Ease shootCircleEase = Ease.OutCubic;
     [SerializeField] private Ease scopeRectEase = Ease.OutCubic;
@@ -79,7 +86,7 @@ public class SniperController : MonoBehaviour
         if (Input.GetMouseButtonUp(0))
         {
             isDragging = false;
-            AnimateScopeWhileShooting();
+            ScopeAnimation();
             //ScopeAnim(false);
         }
     }
@@ -120,6 +127,8 @@ public class SniperController : MonoBehaviour
         );
     }
     #endregion
+    
+    
     #region Animations
     void ScopeAnim(bool _state)
     {
@@ -131,7 +140,7 @@ public class SniperController : MonoBehaviour
         animator.SetBool("Reload", _state);
     }
 
-    void AnimateScopeWhileShooting()
+    void ScopeAnimation()
     {
         if (scopeRect == null)
             return;
@@ -168,6 +177,35 @@ public class SniperController : MonoBehaviour
             ShootCompleted();
         });
     }
+    
+    void ShootAnimation()
+    {
+        if (innerCircleRect == null || outerCircleRect == null || dotRect == null)
+            return;
+        Color startColor = dotRect.color;
+        float duration = 0.7f;
+        float hitTime = duration * 0.5f;
+
+        innerCircleRect.localScale = Vector3.one;
+        outerCircleRect.localScale = Vector3.one;
+        dotRect.color = startColor;
+
+        Sequence shotSequence = DOTween.Sequence();
+
+        shotSequence.Append(innerCircleRect.DOScale(Vector3.zero, duration).SetEase(Ease.InOutCubic));
+
+        shotSequence.InsertCallback(hitTime, () =>
+        {
+            dotRect.DOColor(hitColor, 0.12f).SetEase(Ease.InOutSine);
+        });
+
+        shotSequence.OnComplete(() =>
+        {
+            dotRect.DOColor(startColor, 0.08f).SetEase(Ease.InOutSine);
+            innerCircleRect.localScale = Vector3.one;
+            outerCircleRect.localScale = Vector3.one;
+        });
+    }
     void ShootCompleted()
     {
         if (shootCircle != null)
@@ -176,12 +214,16 @@ public class SniperController : MonoBehaviour
             shootCircle.localScale = Vector3.one;
         }
         scopeRectPivot.gameObject.SetActive(false);
+        shootPanel.SetActive(true);
         ControlGameTimeScale(1f);
         SetCameraActive(killCam, 0f);
+        ShootAnimation();
 
         StartCoroutine(ResetCameraAfterDelay(1.5f));
     }
     #endregion
+    
+    
     #region TimeScale
     void ControlGameTimeScale(float _timeScale)
     {
@@ -203,6 +245,8 @@ public class SniperController : MonoBehaviour
          .SetUpdate(UpdateType.Normal);
     }
     #endregion
+    
+    
     #region Camera
     void SetCameraActive(GameObject cam, float blend)
     {
@@ -222,6 +266,8 @@ public class SniperController : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         SetCameraActive(idleCam, 0.5f);
+        shootPanel.SetActive(false);
+
         ReloadAnim(true);
         yield return new WaitForSeconds(1.5f);
         ReloadAnim(false);
